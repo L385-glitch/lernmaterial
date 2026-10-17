@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxel Pagoda Garden</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#101826;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  #hud{position:fixed;top:14px;left:16px;color:#e8e2d5;pointer-events:none;text-shadow:0 1px 4px #000}
+  #hud h1{font-size:15px;margin:0 0 4px;letter-spacing:.12em;text-transform:uppercase;color:#f2c98a}
+  #hud p{font-size:11px;margin:0;opacity:.75}
+  #stats{position:fixed;bottom:12px;left:16px;color:#9fb0c3;font-size:11px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="hud"><h1>Voxel Pagoda Garden</h1><p>drag to orbit &middot; scroll to zoom &middot; right-drag to pan</p></div>
+<div id="stats"></div>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ---------- voxel store ---------- */
+const V = new Map();
+const K = (x,y,z) => x+'|'+y+'|'+z;
+const put = (x,y,z,c) => V.set(K(x,y,z), c);
+const hash = (x,y,z) => { let h=(x*374761393+y*668265263+z*1274126177)|0; h=(h^(h>>13))*1274126177|0; return ((h^(h>>16))>>>0)/4294967295; };
+const shade = (c,f) => { const r=Math.min(255,((c>>16)&255)*f|0), g=Math.min(255,((c>>8)&255)*f|0), b=Math.min(255,(c&255)*f|0); return (r<<16)|(g<<8)|b; };
+const jit = (c,x,y,z,amt) => shade(c, 1 - amt/2 + hash(x,y,z)*amt);
+
+const C = {
+  grass:[0x3f7d3a,0x4a8f42,0x357033,0x52964a], dirt:0x5a4632, stone:0x8d857c, stoneDark:0x6f695f,
+  wood:0x9c3b34, woodDark:0x6e2a24, floor:0x7a4a2b, roof:0x33415c, roofEdge:0x27334a,
+  gold:0xd9a441, trunk:0x6b4a2b, leaf:[0x2f6e2f,0x3c7f38,0x2a5c2a], maple:[0xd07b3f,0xb8562f,0xe0a04f],
+  rock:0x7d7d84, lantern:0xffc46b, koi:0xe8763a, lily:0x3f8f4a
+};
+
+/* ---------- ground ---------- */
+const G = 24;
+for (let x=-G; x<=G; x++) for (let z=-G; z<=G; z++) {
+  put(x,-1,z, jit(C.dirt,x,0,z,0.18));
+  if (Math.abs(x)<=6 && Math.abs(z)<=6) continue;           // pagoda platform area
+  put(x,0,z, C.grass[Math.floor(hash(x,7,z)*C.grass.length)]);
+}
+
+/* ---------- pond ---------- */
+const waterKeys = [];
+const PC = {x:12, z:10, rx:4.2, rz:3.2};
+for (let x=-G; x<=G; x++) for (let z=-G; z<=G; z++) {
+  const d = ((x-PC.x)/PC.rx)**2 + ((z-PC.z)/PC.rz)**2;
+  if (d <= 1) { V.delete(K(x,0,z)); put(x,0,z,0x2e6fa8); waterKeys.push([x,z]); }
+}
+// lily pads + koi
+for (const [lx,lz] of [[10,9],[13,11],[11,12],[14,8]]) put(lx,1,lz,C.lily);
+for (const [kx,kz] of [[12,10],[13,9]]) put(kx,1,kz,C.koi);
+
+/* ---------- stone path ---------- */
+for (let z=9; z<=24; z++) for (let x=-1; x<=1; x++) put(x,0,z, jit(C.stone,x,0,z,0.12));
+for (let x=2; x<=8; x++) for (let z=9; z<=10; z++) put(x,0,z, jit(C.stone,x,0,z,0.12));
+
+/* ---------- pagoda ---------- */
+// platform + steps
+for (let x=-6; x<=6; x++) for (let z=-6; z<=6; z++) put(x,1,z, jit(C.stone,x,1,z,0.10));
+for (let x=-2; x<=2; x++) for (let z=7; z<=8; z++) put(x,1,z, jit(C.stoneDark,x,1,z,0.10));
+
+const ring = (half,y,c) => {
+  for (let x=-half; x<=half; x++) for (let z=-half; z<=half; z++)
+    if (Math.abs(x)===half || Math.abs(z)===half) put(x,y,z, jit(c,x,y,z,0.10));
+};
+const slab = (half,y,c) => { for (let x=-half; x<=half; x++) for (let z=-half; z<=half; z++) put(x,y,z, jit(c,x,y,z,0.08)); };
+
+// tier 1 (walls y2..6, door on south)
+for (let y=2; y<=6; y++) ring(4,y,C.wood);
+for (let x=-3; x<=3; x++) for (let z=-3; z<=3; z++) put(x,2,z,C.floor);
+for (let x=-1; x<=1; x++) for (let y=2; y<=4; y++) V.delete(K(x,y,4));
+for (const sx of [-1,1]) for (const sz of [-1,1]) for (let y=2; y<=6; y++) put(4*sx,y,4*sz,C.woodDark);
+// roof 1 + upturned eaves
+slab(5,7,C.roof); slab(4,8,C.roof); slab(3,9,C.roof);
+for (const sx of [-1,1]) for (const sz of [-1,1]) { put(6*sx,7,6*sz,C.roofEdge); put(7*sx,8,7*sz,C.roofEdge); }
+// tier 2
+for (let y=10; y<=13; y++) ring(3,y,C.wood);
+for (const [wx,wz] of [[0,3],[0,-3],[3,0],[-3,0]]) for (let y=11; y<=12; y++) put(wx,y,wz,C.gold);
+slab(4,14,C.roof); slab(3,15,C.roof);
+for (const sx of [-1,1]) for (const sz of [-1,1]) { put(5*sx,14,5*sz,C.roofEdge); put(6*sx,15,6*sz,C.roofEdge); }
+// tier 3
+for (let y=16; y<=18; y++) ring(2,y,C.wood);
+for (const [wx,wz] of [[0,2],[0,-2],[2,0],[-2,0]]) for (let y=16; y<=17; y++) put(wx,y,wz,C.gold);
+slab(3,19,C.roof); slab(2,20,C.roof); slab(1,21,C.roof);
+for (const sx of [-1,1]) for (const sz of [-1,1]) put(4*sx,19,4*sz,C.roofEdge);
+// gold finial
+for (let y=22; y<=25; y++) put(0,y,0,C.gold);
+for (const [dx,dz] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]) put(dx,26,dz,C.gold);
+
+/* ---------- trees ---------- */
+function tree(tx,tz,maple){
+  const h = 3 + Math.floor(hash(tx,1,tz)*2);
+  for (let y=1; y<=h; y++) put(tx,y,tz,C.trunk);
+  const r = 2.4 + hash(tx,2,tz)*0.8, cy = h+1;
+  for (let dx=-3; dx<=3; dx++) for (let dy=-1; dy<=3; dy++) for (let dz=-3; dz<=3; dz++) {
+    if (dx*dx + dz*dz + (dy*1.35)**2 <= r*r && hash(tx+dx,dy,tz+dz) > 0.12) {
+      const pal = maple && hash(tx+dx,dy+9,tz+dz) > 0.45 ? C.maple : C.leaf;
+      put(tx+dx, cy+dy, tz+dz, pal[Math.floor(hash(tx+dx,dy,tz+dz)*pal.length)]);
+    }
+  }
+}
+for (const [tx,tz,m] of [[-15,-15,1],[-17,4,0],[15,-15,1],[-12,18,0],[18,-4,0],[-6,-18,1],[6,-18,0],[20,16,1]]) tree(tx,tz,m);
+
+/* ---------- rocks ---------- */
+for (const [rx,rz] of [[-8,-12],[8,-16],[-18,-2]]) {
+  for (let dx=-1; dx<=1; dx++) for (let dz=-1; dz<=1; dz++) for (let dy=0; dy<=1; dy++)
+    if (hash(rx+dx,dy,rz+dz) > 0.3) put(rx+dx,dy,rz+dz, jit(C.rock,rx+dx,dy,rz+dz,0.15));
+}
+
+/* ---------- lanterns ---------- */
+const lanterns = [[2,12],[2,18],[-2,12],[-2,18]];
+const lanternTops = [];
+for (const [lx,lz] of lanterns) {
+  put(lx,1,lz,C.stoneDark); put(lx,2,lz,C.stoneDark);
+  lanternTops.push([lx,3,lz]);
+}
+
+/* ---------- scene ---------- */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x101826);
+scene.fog = new THREE.Fog(0x101826, 70, 150);
+
+const hemi = new THREE.HemisphereLight(0x8fb3d9, 0x2a2018, 0.9);
+const sun = new THREE.DirectionalLight(0xffd9a0, 2.4);
+sun.position.set(34, 42, 22); sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera, {left:-35,right:35,top:35,bottom:-35,near:1,far:120});
+scene.add(hemi, sun);
+
+const geo = new THREE.BoxGeometry(1,1,1);
+const m4 = new THREE.Matrix4(), col = new THREE.Color();
+
+function buildMesh(keys, material){
+  const mesh = new THREE.InstancedMesh(geo, material, keys.length);
+  keys.forEach((k,i)=>{ const [x,y,z]=k.split('|').map(Number);
+    m4.makeTranslation(x, y+0.5, z); mesh.setMatrixAt(i,m4); mesh.setColorAt(i, col.setHex(V.get(k))); });
+  mesh.castShadow = mesh.receiveShadow = true;
+  scene.add(mesh); return mesh;
+}
+
+const waterSet = new Set(waterKeys.map(([x,z])=>K(x,0,z)));
+const mainKeys = [...V.keys()].filter(k=>!waterSet.has(k));
+buildMesh(mainKeys, new THREE.MeshStandardMaterial({roughness:0.85, metalness:0.05}));
+
+const waterMesh = buildMesh([...waterSet], new THREE.MeshStandardMaterial({roughness:0.25, metalness:0.1, transparent:true, opacity:0.88}));
+
+const topMesh = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({color:C.lantern}), lanternTops.length);
+lanternTops.forEach(([x,y,z],i)=>{ m4.makeTranslation(x,y+0.5,z); topMesh.setMatrixAt(i,m4); });
+scene.add(topMesh);
+for (const [lx,lz] of lanterns){ const p = new THREE.PointLight(0xffa64d, 10, 14, 2); p.position.set(lx,3.6,lz); scene.add(p); }
+
+/* fireflies */
+const N = 70, fp = new Float32Array(N*3), fseed = new Float32Array(N);
+for (let i=0;i<N;i++){ fp[i*3]=(hash(i,1,3)-0.5)*44; fp[i*3+1]=2+hash(i,2,5)*7; fp[i*3+2]=(hash(i,3,7)-0.5)*44; fseed[i]=hash(i,4,11)*6.283; }
+const fgeo = new THREE.BufferGeometry(); fgeo.setAttribute('position', new THREE.BufferAttribute(fp,3));
+const flies = new THREE.Points(fgeo, new THREE.PointsMaterial({color:0xffe08a, size:0.38, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false}));
+scene.add(flies);
+
+/* camera */
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 400);
+camera.position.set(30, 24, 34);
+const controls = new OrbitControls(camera, document.querySelector('canvas') || document.body);
+controls.target.set(0, 11, 0); controls.enableDamping = true; controls.dampingFactor = 0.06;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
+controls.minDistance = 14; controls.maxDistance = 95; controls.maxPolarAngle = 1.45;
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+controls.object = camera;
+
+document.getElementById('stats').textContent = V.size + ' voxels';
+
+addEventListener('resize', ()=>{ camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+const wA = new THREE.Color(0x2e6fa8), wB = new THREE.Color(0x4593cc);
+function loop(t){
+  requestAnimationFrame(loop);
+  const s = t*0.001;
+  waterKeys.forEach(([x,z],i)=>{ const f = 0.5 + 0.5*Math.sin(s*1.6 + hash(x,3,z)*6.283);
+    waterMesh.setColorAt(i, col.copy(wA).lerp(wB, f)); });
+  waterMesh.instanceColor.needsUpdate = true;
+  const pos = fgeo.attributes.position.array;
+  for (let i=0;i<N;i++) pos[i*3+1] += Math.sin(s*1.3 + fseed[i])*0.004;
+  fgeo.attributes.position.needsUpdate = true;
+  controls.update();
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
