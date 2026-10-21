@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Zellzyklus">
+<title>Zellzyklus & Mitose – Phasen lernen</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b23; --panel2:#1c232e; --line:#2a3441;
+    --text:#e6edf3; --muted:#8b98a9; --accent:#4cc9f0; --accent2:#7b5cff;
+    --ok:#3ddc84; --warn:#ffb020; --err:#ff5c72;
+    --g1:#4cc9f0; --s:#7b5cff; --g2:#ffb020; --m:#3ddc84;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%, #1a2740 0%, var(--bg) 55%);
+    color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;
+    -webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+  .wrap{max-width:860px;margin:0 auto;padding:16px 16px calc(80px + env(safe-area-inset-bottom))}
+  header{position:sticky;top:0;z-index:10;background:rgba(14,17,22,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+  .hbar{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:1.05rem;letter-spacing:.3px}
+  .logo span{color:var(--accent)}
+  .stats{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:.85rem;color:var(--muted)}
+  .pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;color:var(--text)}
+  .pill b{color:var(--accent)}
+  .pbar{width:100%;max-width:860px;margin:8px auto 0;height:8px;background:var(--panel2);border-radius:999px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+  .intro{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:18px 0}
+  .intro h1{margin:0 0 6px;font-size:1.4rem}
+  .intro p{margin:6px 0;color:var(--muted)}
+  .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .legend span{font-size:.8rem;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 9px;color:var(--muted)}
+  .diagram{background:#0b0f14;border:1px solid var(--line);border-radius:12px;margin:14px 0;padding:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .diagram svg{display:block;width:240px;max-width:100%;height:auto;flex:none}
+  .dinfo{font-size:.88rem;color:var(--muted);max-width:340px}
+  .dinfo b{color:var(--text)}
+  .dinfo .row{display:flex;gap:8px;align-items:center;margin:4px 0}
+  .dinfo i{display:inline-block;width:12px;height:12px;border-radius:4px;flex:none}
+  .level{margin:34px 0 8px;display:flex;align-items:center;gap:10px}
+  .level h2{margin:0;font-size:1.15rem}
+  .level .tag{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:2px 8px;background:var(--panel2)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0;position:relative}
+  .card.solved{border-color:rgba(61,220,132,.45)}
+  .card.locked{opacity:.45;filter:grayscale(.4)}
+  .qhead{display:flex;gap:10px;align-items:baseline;margin-bottom:8px}
+  .qnum{font-size:.75rem;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px 8px;white-space:nowrap}
+  .qtitle{font-weight:700}
+  .diff{margin-left:auto;font-size:.75rem;letter-spacing:1px;color:var(--warn)}
+  .prompt{margin:4px 0 12px}
+  .prompt code, .fml{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--panel2);
+    border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.95em}
+  .opts{display:grid;gap:8px}
+  .opt{display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;cursor:pointer;transition:border-color .15s, background .15s;color:var(--text);
+    font-size:.95rem;line-height:1.45;
+    touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  .opt:hover{border-color:var(--accent)}
+  .opt .dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);flex:none;margin-top:3px}
+  .opt.pick{border-color:var(--accent)} .opt.pick .dot{border-color:var(--accent);background:var(--accent)}
+  .opt.right{border-color:var(--ok)} .opt.right .dot{border-color:var(--ok);background:var(--ok)}
+  .opt.wrong{border-color:var(--err)} .opt.wrong .dot{border-color:var(--err);background:var(--err)}
+  .answerrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  input[type=text]{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);
+    padding:10px 12px;font-size:1rem;width:min(240px,100%)}
+  input[type=text]:focus{outline:none;border-color:var(--accent)}
+  button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;
+    padding:10px 14px;font-size:.92rem;cursor:pointer;touch-action:manipulation}
+  button.primary{background:linear-gradient(130deg,var(--accent),var(--accent2));border:none;color:#0b1020;font-weight:700}
+  button.ghost{background:transparent;color:var(--muted)}
+  button:disabled{opacity:.5;cursor:default}
+  .unit{color:var(--muted);font-size:.9rem}
+  .fb{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:.92rem;display:none}
+  .fb.ok{display:block;background:rgba(61,220,132,.12);border:1px solid rgba(61,220,132,.4)}
+  .fb.err{display:block;background:rgba(255,92,114,.1);border:1px solid rgba(255,92,114,.4)}
+  .fb.hint{display:block;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.4)}
+  .fb .why{color:var(--muted);margin-top:6px}
+  .tools{margin-top:10px;display:flex;gap:8px}
+  .lockmsg{padding:14px;color:var(--muted);text-align:center}
+  .lockmsg b{color:var(--warn)}
+  .done{margin-top:26px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .done h2{margin:0 0 8px}
+  .confetti{font-size:2rem}
+  .foot{margin-top:30px;text-align:center;color:var(--muted);font-size:.8rem}
+  @media(max-width:560px){
+    .stats{margin-left:0;width:100%}
+    .answerrow input[type=text]{flex:1 1 160px;width:auto}
+    .answerrow button.primary{flex:1}
+    .qhead{flex-wrap:wrap}
+    .diff{margin-left:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="logo">🔄 Zell<span>zyklus</span> & Mitose</div>
+    <div class="stats">
+      <span class="pill">Punkte <b id="pts">0</b>/250</span>
+      <span class="pill">Serie <b id="streak">0</b>🔥</span>
+      <button class="ghost" id="resetBtn" title="Fortschritt löschen">↺ Reset</button>
+    </div>
+  </div>
+  <div class="pbar"><i id="pfill"></i></div>
+</header>
+
+<div class="wrap">
+  <div class="intro">
+    <h1>Die Phasen der Zellteilung 🔁</h1>
+    <p>25 Aufgaben zum <b>Zellzyklus</b> (G1 · S · G2 · M) und zu den <b>Phasen der Kernteilung</b>
+    (Prophase → Prometaphase → Metaphase → Anaphase → Telophase) inkl. Cytokinese —
+    nach 3 Lösungen pro Level öffnet sich das nächste Level.</p>
+    <div class="diagram" aria-label="Zellzyklus als Kreisdiagramm">
+      <svg viewBox="0 0 240 240" role="img">
+        <g transform="rotate(-90 120 120)">
+          <circle cx="120" cy="120" r="90" fill="none" stroke="#4cc9f0" stroke-width="26" stroke-dasharray="188.5 377" stroke-dashoffset="0"/>
+          <circle cx="120" cy="120" r="90" fill="none" stroke="#7b5cff" stroke-width="26" stroke-dasharray="141.4 424.1" stroke-dashoffset="-188.5"/>
+          <circle cx="120" cy="120" r="90" fill="none" stroke="#ffb020" stroke-width="26" stroke-dasharray="94.2 471.2" stroke-dashoffset="-329.9"/>
+          <circle cx="120" cy="120" r="90" fill="none" stroke="#3ddc84" stroke-width="26" stroke-dasharray="141.4 424.1" stroke-dashoffset="-424.1"/>
+        </g>
+        <g font-size="15" font-weight="700" font-family="system-ui,sans-serif" text-anchor="middle">
+          <text x="219" y="65" fill="#4cc9f0">G1</text>
+          <text x="150" y="232" fill="#7b5cff">S</text>
+          <text x="38" y="200" fill="#ffb020">G2</text>
+          <text x="22" y="65" fill="#3ddc84">M</text>
+        </g>
+        <g font-size="11" fill="#8b98a9" font-family="system-ui,sans-serif" text-anchor="middle">
+          <text x="120" y="112">Interphase</text>
+          <text x="120" y="128">= G1 + S + G2</text>
+          <text x="120" y="144">M = Mitose + Cytokinese</text>
+        </g>
+      </svg>
+      <div class="dinfo">
+        <div class="row"><i style="background:var(--g1)"></i><span><b>G1</b> — postmitotisch / Präsynthesephase</span></div>
+        <div class="row"><i style="background:var(--s)"></i><span><b>S</b> — DNA-Replikation, Centrosomen verdoppeln</span></div>
+        <div class="row"><i style="background:var(--g2)"></i><span><b>G2</b> — prämitotisch / Postsynthesephase</span></div>
+        <div class="row"><i style="background:var(--m)"></i><span><b>M</b> — Kernteilung (Mitose) + Zellteilung (Cytokinese)</span></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span>💡 Tipp kostet 2 Punkte</span><span>Erster Versuch = volle Punkte</span>
+      <span>Rechtschreibung & Gross/klein egal</span><span>Fortschritt wird lokal gespeichert</span>
+    </div>
+    <div id="lsWarn" style="display:none;margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.4);font-size:.9rem">
+      ⚠️ Kein dauerhafter Speicher verfügbar — du bist vermutlich in der iPhone-<b>Dateien-Vorschau</b>. Alles funktioniert, aber der Fortschritt gilt nur für diese Sitzung. Tipp: Teilen-Symbol → „In Safari öffnen“ bzw. die Datei in eine Browser-App wie „Documents“ laden.
+    </div>
+  </div>
+  <div id="app"></div>
+  <div class="foot">Zellzyklus & Mitose · Fortschritt im Browser gespeichert (localStorage)</div>
+</div>
+
+<script>
+"use strict";
+const LEVELS=[
+ {n:1,name:"Der Zellzyklus im Überblick",emoji:"🔄",tag:"G1 · S · G2 · M"},
+ {n:2,name:"Interphase genau betrachtet",emoji:"🧬",tag:"Wachstum & Verdopplung"},
+ {n:3,name:"Prophase → Metaphase",emoji:"🌫️",tag:"Kondensieren & Ausrichten"},
+ {n:4,name:"Anaphase → Telophase → Cytokinese",emoji:"✂️",tag:"Trennen & Teilen"},
+ {n:5,name:"Transfer: Bakterien, Krebs & Co",emoji:"🏆",tag:"Anwendung"}
+];
+// type: mc (options, correct idx) | text (answers: [akzeptierte Lösungen]) | input (answer+tol)
+const TASKS=[
+{"id":1,"level":1,"icon":"🔄","title":"Die vier Phasen","type":"mc","prompt":"Der Zellzyklus hat vier Phasen. In welcher <b>Reihenfolge</b> laufen sie ab?","options":["S → G1 → G2 → M","G1 → S → G2 → M","G1 → G2 → S → M","M → G1 → S → G2"],"correct":1,"hint":"Erst Wachstum, dann Synthese (DNA), dann Vorbereitung, dann Teilung.","explain":"G1 (Wachstum) → S (DNA-Replikation) → G2 (Vorbereitung) → M (Mitose + Cytokinese). Danach beginnt der Zyklus von neuem."},
+{"id":2,"level":1,"icon":"🔎","title":"Was heisst Interphase?","type":"mc","prompt":"Die meiste Zeit verbringt eine Zelle in der <b>Interphase</b>. Welche Phasen umfasst sie?","options":["nur G1 und M","Mitose und Cytokinese","nur die S-Phase","G1, S und G2"],"correct":3,"hint":"Alles ausser der eigentlichen Teilung.","explain":"Interphase = G1 + S + G2: die „Stoffwechsel- und Vorbereitungsphase“ zwischen zwei Teilungen. Die Teilung selbst ist die M-Phase."},
+{"id":3,"level":1,"icon":"🧩","title":"Was gehört zur M-Phase?","type":"mc","prompt":"Die M-Phase („M-phase“) umfasst zwei Ereignisse. Welche?","options":["Mitose (Kernteilung) und Cytokinese (Zellteilung)","DNA-Replikation und Centrosom-Verdopplung nacheinander","Zellwachstum und Vorbereitung auf die nächste Teilung","Prophase der Mitose und die folgende Interphase"],"correct":0,"hint":"M = Mitose + … das Teilen des Zytoplasmas.","explain":"M-Phase = Mitose (Kern wird geteilt) + Cytokinese (Zytoplasma wird geteilt). Zwei identische Tochterzellen entstehen."},
+{"id":4,"level":1,"icon":"🔤","title":"Name der Kernteilung","type":"text","prompt":"Wie heisst die <b>Kernteilung</b> der eukaryontischen Zelle? (Ein Wort)","answers":["mitose","kernteilung"],"hint":"Sie beginnt mit M — und hat 5 Phasen.","explain":"Mitose: die Kernteilung mit den Phasen Prophase, Prometaphase, Metaphase, Anaphase, Telophase. Entdeckt/benannt von Walther Flemming (1882)."},
+{"id":5,"level":1,"icon":"🎯","title":"Wozu dient Zellteilung?","type":"mc","prompt":"Welcher der folgenden Punkte ist <u>kein</u> Grund für Zellteilung?","options":["Fortpflanzung, zum Beispiel bei der Amöbe","Wachstum und Entwicklung, z.B. beim befruchteten Seeigel-Ei","Energiespeicherung in Fettvakuolen","Erneuerung von Zellen, zum Beispiel im Knochenmark"],"correct":2,"hint":"Die anderen drei stehen alle im Skript als Beispiele.","explain":"Zellteilung dient der Reproduktion (Amöbe), Wachstum/Entwicklung (Seeigel-Ei) und Erneuerung (Knochenmark). Energiespeicherung ist eine Stoffwechselfunktion, kein Teilungsgrund."},
+{"id":6,"level":2,"icon":"📝","title":"Was passiert in der S-Phase?","type":"mc","prompt":"Die S-Phase ist die Synthesephase. Was passiert hier?","options":["Zellwachstum und Ergänzung der Zellbestandteile ohne DNA-Synthese","DNA-Replikation, Histin-Produktion und Centrosomen verdoppeln sich","Kondensation des Chromatins zu sichtbaren Chromosomen","Auflösung der Kernhülle und Aufbau der Spindelfasern"],"correct":1,"hint":"S = Synthese. Es entsteht das Zwei-Chromatiden-Chromosom.","explain":"In der S-Phase wird die DNA repliziert (→ Zwei-Chromatiden-Chromosomen), Histone werden produziert und die Centrosomen repliziert. Wachstum ohne Synthese läuft dagegen in der G1."},
+{"id":7,"level":2,"icon":"🌱","title":"G1 — die Wachstumsphase","type":"mc","prompt":"Die G1-Phase heisst auch „postmitotische Phase“ oder „Präsynthesephase“. Was läuft hier ab?","options":["Teilung der Centrosomen und Kondensation der Chromosomen","Trennung der Schwesterchromatiden und Bewegung zu den Polen","Neubildung von Kernhülle und Nucleoli um die Chromosomen herum","Zellwachstum, Ergänzung von Zellbestandteilen, Vorbereitung auf die S-Phase"],"correct":3,"hint":"Direkt nach der Teilung (post-mitotisch) muss die Zelle erst wieder wachsen.","explain":"G1 = Zeit nach der Mitose: Die Zelle wächst, ergänzt Zellbestandteile und bereitet die DNA-Synthese vor. „Gap“ = Lücke zwischen Teilung und Synthese."},
+{"id":8,"level":2,"icon":"🧮","title":"Chromatiden zählen","type":"mc","prompt":"Wie viele Chromatiden hat ein Chromosom in der G1-Phase und wie viele nach der S-Phase?","options":["G1: 1 Chromatid → nach S: 2 Chromatiden","G1: 2 Chromatiden → nach S: 4 Chromatiden","G1: 1 Chromatid → nach S: bleibt 1","G1: 0 Chromatiden → nach S: 2 Chromatiden"],"correct":0,"hint":"Vor der Replikation ist es ein einzelner Faden, danach ein X.","explain":"G1: 1 Chromatid. Nach der Replikation (S): 2 identische Schwesterchromatiden am Centromer — die typische X-Form. Sie werden erst in der Anaphase getrennt."},
+{"id":9,"level":2,"icon":"🔬","title":"Interphase unter dem Mikroskop","type":"mc","prompt":"Woran erkennst du im Lichtmikroskop eine Zelle in der Interphase (G2)?","options":["Chromosomen deutlich als X-Form sichtbar, Kernhülle fehlt komplett","Metaphasenplatte mit ausgerichteten Chromosomen in der Zellmitte","Kernhülle intakt, Nucleolus sichtbar, Chromosomen nicht sichtbar","Tiefe Teilungsfurche zwischen zwei entstehenden Tochterzellen"],"correct":2,"hint":"Solange die Chromosomen nicht kondensiert sind, siehst du nur einen diffusen Kern.","explain":"In der Interphase: Kernhülle intakt, Nucleolus (Kernkörperchen) lichtmikroskopisch sichtbar, Chromosomen als Chromatin nicht einzeln erkennbar. Erst ab Prophase/Prometaphase werden sie sichtbar."},
+{"id":10,"level":2,"icon":"⚠️","title":"Trickfrage aus dem Skript","type":"mc","prompt":"Laut Skript beginnt die Verdichtung der Chromosomen bereits in der …","options":["Metaphase (Mitose)","Interphase (G2)","Anaphase (Mitose)","Cytokinese (Teilung)"],"correct":1,"hint":"„Bereits in der Interphase …“ steht wörtlich in der Zusammenfassung.","explain":"Überraschung: Die Chromosomenverdichtung beginnt laut Skript bereits in der Interphase (G2) — in der Prophase werden die Chromosomen dann lichtmikroskopisch sichtbar. Merksatz für die Prüfung! 📝"},
+{"id":11,"level":3,"icon":"🌫️","title":"Was passiert in der Prophase?","type":"mc","prompt":"Welche Ereignisse gehören zur Prophase?","options":["Schwesterchromatiden trennen sich und wandern zu den Polen","Kernhülle und Nucleoli bilden sich neu, Spindel-MT depolymerisieren","Die kontraktille Teilungsfurche schnürt die Zelle in zwei Hälften","Chromatin kondensiert, Nucleoli lösen sich auf, der Spindelapparat bildet sich"],"correct":3,"hint":"Kondensation + Auflösung Kernkörperchen + Spindel-Aufbau.","explain":"Prophase: Chromosomen werden sichtbar (Kondensation), die Nucleoli verschwinden, Centrosomen wandern auseinander und der Spindelapparat entsteht. Die Kernhülle ist jetzt noch intakt — sie fragmentiert erst in der Prometaphase."},
+{"id":12,"level":3,"icon":"🎨","title":"Etymologie: Chromosom","type":"text","prompt":"Chromosom kommt von griech. chrōma + sōma („Körper“). chrōma bedeutet …? (Ein Wort, übersetze es)","answers":["farbe","farbstoff"],"hint":"Denk an Chromatographie und Chromatinfärbung.","explain":"chrōma = Farbe, sōma = Körper: „Körper, der sich färbt“ — weil die Chromosomen mit Anilinfarben gut anfärbbar sind. Flemming entdeckte sie als färbbare Strukturen."},
+{"id":13,"level":3,"icon":"🫧","title":"Wann fragmentiert die Kernhülle?","type":"text","prompt":"In welcher Phase der Mitose fragmentiert die Kernhülle und die Kinetochor-Mikrotubuli bilden sich aus? (Phase, ein Wort)","answers":["prometaphase"],"hint":"Sie liegt zwischen Prophase und Metaphase.","explain":"Prometaphase: Kernhülle fragmentiert, Mikrotubuli dringen ein und binden an Kinetochore, die Chromosomen kondensieren weiter — es beginnt das „Tauziehen“."},
+{"id":14,"level":3,"icon":"🎯","title":"Metaphase-Erkennung","type":"mc","prompt":"Eine Zelle zeigt: Centrosomen an gegenüberliegenden Polen, beide Chromatiden sichtbar, alle Chromosomen in einer Ebene der Zellmitte. Welche Phase?","options":["Metaphase","Prophase","Anaphase","Telophase"],"correct":0,"hint":"Diese Ebene heisst Metaphasen…","explain":"Metaphase: Alle Chromosomen sind zur Metaphasenplatte (Äquatorialebene) ausgerichtet, je ein Centrosom pro Pol. Erst jetzt ist der Spindel-Checkpoint erfüllt."},
+{"id":15,"level":3,"icon":"🔢","title":"Reihenfolge der Mitose-Phasen","type":"mc","prompt":"Wie lautet die korrekte Reihenfolge der fünf Mitose-Phasen?","options":["Prophase → Metaphase → Prometaphase → Telophase → Anaphase","Prometaphase → Prophase → Metaphase → Telophase → Anaphase","Prophase → Prometaphase → Metaphase → Anaphase → Telophase","Metaphase → Prophase → Anaphase → Prometaphase → Telophase"],"correct":2,"hint":"P → PM → M → A → T (das Cytokinese folgt oft überlappend).","explain":"Prophase → Prometaphase → Metaphase → Anaphase → Telophase, danach/überlappend die Cytokinese. Eselsbrücke: „Pro(Prometa)MAtA“ — vom Aufbau über die Mitte zur Trennung."},
+{"id":16,"level":4,"icon":"✂️","title":"Der Anaphase-Schnitt","type":"mc","prompt":"Damit sich die Schwesterchromatiden trennen, muss der „Kleber“ Kohäsin gespalten werden. Wodurch?","options":["Durch die Histone","Durch das Enzym Separase","Durch die Kernhüllen-Vesikel","Durch Spalten der Zellmembran"],"correct":1,"hint":"Der Name des Enzyms verrät es fast.","explain":"Separase spaltet Kohäsin, den Proteinkleber zwischen den Schwesterchromatiden. Ab jetzt gilt jedes Chromatid als eigenes Chromosom und wandert zum Pol."},
+{"id":17,"level":4,"icon":"⚖️","title":"Nach der Anaphase","type":"mc","prompt":"Was gilt nach der Trennung der Schwesterchromatiden in der Anaphase?","options":["Eine Hälfte erhält alle Chromosomen, die andere geht leer aus","Beide Hälften haben nur halb so viele Chromosomen wie die Mutterzelle","Die Chromosomen dekondensieren und verschwinden vollständig","Beide Zellhälften besitzen einen vollständigen, identischen Chromosomensatz"],"correct":3,"hint":"Genau darum geht es: perfekte Kopie auf beide Seiten.","explain":"Weil die Schwesterchromatiden genetisch identisch sind, erhält jede Hälfte den vollständigen Chromosomensatz. Die Zelle wächst zusätzlich in die Länge (Spindelstreckung)."},
+{"id":18,"level":4,"icon":"🏗️","title":"Telophase: Rückbau","type":"mc","prompt":"Welche Ereignisse gehören zur Telophase?","options":["Kernhülle und Nucleoli bilden sich neu, Chromosomen dekondensieren, MT bauen ab","Kernhülle fragmentiert in Vesikel, Chromosomen kondensieren weiter","Centrosomen replizieren sich, die Zelle wächst und bereitet S vor","Kohäsin wird durch Separase gespalten und Chromatiden trennen sich"],"correct":0,"hint":"Fast das Gegenteil der Prophase.","explain":"Telophase = Rückbau ins Interphase-Stadium: zwei identische Zellkerne mit intakter Kernhülle und Nucleoli, dekondensierte Chromosomen, abgebaute Spindel."},
+{"id":19,"level":4,"icon":"🪢","title":"Der kontraktille Ring","type":"mc","prompt":"Die Cytokinese tierischer Zellen schnürt die Zelle mit einem kontraktilen Ring ab. Aus welchen Proteinen besteht er?","options":["Tubulin und Kinetochor","Kohäsin und Separase","Actin und Myosin","Histone und Keratin"],"correct":2,"hint":"Dieselben Proteine wie in der Muskulatur.","explain":"Ein Ring aus Actin und Myosin (wie im Muskel) zieht die Teilungsfurche (Furche = cleavage furrow) zusammen, bis zwei Zellen entstehen. Die Cytokinese überlappt oft mit der Telophase."},
+{"id":20,"level":4,"icon":"🌱","title":"Pflanze vs. Tier","type":"mc","prompt":"Wie unterscheidet sich die Cytokinese der Pflanzenzelle von der tierischen Zelle?","options":["Pflanzenzellen kennen gar keine Cytokinese nach der Mitose","Pflanzen bauen eine Zellplatte von innen auf, Tiere schnüren eine Furche ein","Tiere bilden eine Zellplatte, Pflanzen eine Teilungsfurche","Beide teilen sich, indem sie einfach die Kernhülle durchschnüren"],"correct":1,"hint":"Die starre Zellwand lässt kein Einschnüren zu.","explain":"Tiere: kontraktiler Ring → Teilungsfurche von aussen nach innen. Pflanzen: wegen der Zellwand wird von innen eine Zellplatte (Phragmoplast) zur neuen Zellwand aufgebaut."},
+{"id":21,"level":5,"icon":"🦠","title":"Warum Bakterien keine Mitose machen","type":"mc","prompt":"Prokaryonten teilen sich durch „Zweiteilung“ ohne Mitose. Warum?","options":["Ihnen fehlen die Ribosomen, die man für die Mitose bräuchte","Sie hätten zu viele lineare Chromosomen für eine Spindelbildung","Ihre Zellmembran lässt kein Tubulin für eine Spindel durch","Sie besitzen keinen Kern und meist nur ein ringförmiges DNA-Molekül"],"correct":3,"hint":"Mitose = Kernteilung. Kein Kern → keine Kernteilung.","explain":"Ohne Kern keine Kernteilung: Bakterien replizieren ihre meist zirkuläre DNA an der Replikationsursprung-Stelle „Ori“, trennen die Kopien zur Zellstreckung und stülpen dann die Membran ein (binäre Spaltung)."},
+{"id":22,"level":5,"icon":"🎗️","title":"Krebs und Zellzyklus","type":"mc","prompt":"Laut Skript ist Krebs die Folge von Fehlsteuerung des Zellzyklus. Was wird daraus?","options":["Proto-Onkogene werden durch Mutation zu Onkogenen","Tumorsuppressoren werden zu Proto-Onkogenen umgewandelt","Histone werden durch Enzyme zu Tubulin umgebaut","Die Mitose findet in den Krebszellen gar nicht mehr statt"],"correct":0,"hint":"Proto = Vorstufe. Mutation macht daraus den Gaspedal-Defekt.","explain":"Proto-Onkogene regulieren den normalen Zellzyklus. Durch Mutation werden sie zu Onkogenen — die Zelle teilt sich unkontrolliert. (Klassisches Prüfungs-Know-how aus dem Skript.)"},
+{"id":23,"level":5,"icon":"🧵","title":"Funktionen der Mikrotubuli","type":"mc","prompt":"Welche ist <u>keine</u> Funktion der Mikrotubuli laut Skript?","options":["Chromosomentransport während der Mitose","Der Zelle ihre Gestalt geben (Cytoskelett)","Herstellung von Neurotransmittern in den Ribosomen","Zellmotilität durch Cilien und Flagellen"],"correct":2,"hint":"Mikrotubuli transportieren Vesikel — produzieren aber keine Botenstoffe.","explain":"Mikrotubuli transportieren Organellen/Vesikel (z.B. Neurotransmitter-Vesikel entlang von Axonen), geben Zellgestalt, fahren Cilien/Flagellen (9er-Symmetrie) und transportieren Chromosomen. Produziert werden Botenstoffe woanders."},
+{"id":24,"level":5,"icon":"🧶","title":"Chromatin vs. Chromosom","type":"mc","prompt":"Was unterscheidet Chromatin von einem Chromosom?","options":["Chromatin ist RNA, ein Chromosom besteht dagegen aus DNA","Chromatin = lockere DNA+Histone; Chromosom = dessen verdichtete Form","Chromatin gibt es nur in Prokaryonten, Chromosomen nur in Eukaryonten","Chromosomen bestehen aus Lipiden, Chromatin aus Kohlenhydraten"],"correct":1,"hint":"Zwei Zustände desselben Materials: locker vs. verdichtet.","explain":"Chromatin = DNA + Histone (8 Histone = Nucleosom), die lockere Form der Interphase. Chromosom = dicht gepacktes Chromatin (plus Struktur-/Begleitproteine und RNA) der Teilungsphase. Gleiches Material, verschiedene Packungsstufe."},
+{"id":25,"level":5,"icon":"💡","title":"Boss: Fluoreszenz-Experiment","type":"mc","prompt":"Im Skript: Wildschwein-Nierenepithel mit Fusionsproteinen — mCherry an Histone, mEmerald an Tubulin gebunden. Was leuchtet im Mikroskop ROT?","options":["Die Mikrotubuli der Spindel","Die Kernhülle um den Zellkern","Die Mitochondrien im Cytoplasma","Die Chromosomen / das Chromatin"],"correct":3,"hint":"mCherry = rot, und Histone sitzen an der DNA.","explain":"mCherry (rot) markiert Histone → Chromosomen leuchten rot; mEmerald (grün) markiert Tubulin → die Spindel leuchtet grün. Genau so entstehen die Aufnahmen aus deinem Präparat. 🏆"}
+];
+
+const KEY="zz-mitose-v1";
+const LS=(()=>{try{const k="__t";localStorage.setItem(k,"1");localStorage.removeItem(k);return localStorage;}catch(e){return null;}})();
+let MEM=null;
+let S=load();
+function load(){try{const raw=LS?LS.getItem(KEY):MEM;if(raw){const d=JSON.parse(raw);if(d&&d.t)return d;}}catch(e){}return{t:{},streak:0};}
+function save(){const j=JSON.stringify(S);MEM=j;if(LS){try{LS.setItem(KEY,j);}catch(e){showStorageWarn();}}else showStorageWarn();}
+function showStorageWarn(){const w=document.getElementById("lsWarn");if(w)w.style.display="block";}
+function st(id){return S.t[id]||(S.t[id]={solved:false,attempts:0,hint:false,pts:0});}
+function solvedCount(){return TASKS.filter(t=>st(t.id).solved).length;}
+function totalPts(){return TASKS.reduce((a,t)=>a+st(t.id).pts,0);}
+function levelSolved(n){return TASKS.filter(t=>t.level===n&&st(t.id).solved).length;}
+function levelUnlocked(n){
+  if(n===1)return true;
+  const need=Math.min(3,TASKS.filter(t=>t.level===n-1).length);
+  return levelSolved(n-1)>=need;
+}
+function norm(s){return s.toLowerCase().trim()
+  .replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss")
+  .replace(/[-\s_]/g,"");}
+
+const app=document.getElementById("app");
+function render(){
+  app.innerHTML="";
+  let q=0;
+  for(const lv of LEVELS){
+    const h=document.createElement("div");h.className="level";
+    h.innerHTML=`<h2>${lv.emoji} Level ${lv.n}: ${lv.name}</h2><span class="tag">${lv.tag}</span>`;
+    app.appendChild(h);
+    const unlocked=levelUnlocked(lv.n);
+    const tasks=TASKS.filter(t=>t.level===lv.n);
+    if(!unlocked){
+      const c=document.createElement("div");c.className="card locked";
+      const need=Math.min(3,tasks.length);
+      c.innerHTML=`<div class="lockmsg">🔒 Gelöst mindestens <b>${need}</b> Aufgaben aus Level ${lv.n-1}, um hier zu starten. (Aktuell: ${levelSolved(lv.n-1)}/${TASKS.filter(t=>t.level===lv.n-1).length})</div>`;
+      app.appendChild(c);continue;
+    }
+    for(const t of tasks){
+      q++;
+      const s=st(t.id);
+      const card=document.createElement("div");
+      card.className="card"+(s.solved?" solved":"");
+      card.id="card"+t.id;
+      const stars="★".repeat(lv.n)+"☆".repeat(5-lv.n);
+      let body="";
+      if(t.type==="mc"){
+        body+=`<div class="opts" id="opts${t.id}">`+t.options.map((o,i)=>
+          `<button class="opt" data-i="${i}"><span class="dot"></span><span>${o}</span></button>`).join("")+`</div>`;
+      }else{
+        body+=`<div class="answerrow"><input type="text" id="in${t.id}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${t.type==="text"?"Begriff eingeben…":"Antwort…"}" ${s.solved?"disabled":""}>`+
+          (t.unit?`<span class="unit">${t.unit}</span>`:``)+
+          `<button class="primary" id="chk${t.id}" ${s.solved?"disabled":""}>Prüfen</button></div>`;
+      }
+      body+=`<div class="fb" id="fb${t.id}"></div>`;
+      body+=`<div class="tools"><button class="ghost" id="hint${t.id}" ${s.hint||s.solved?"disabled":""}>💡 Tipp</button>`+
+        (s.solved?`<span class="unit">+${s.pts} Punkte</span>`:``)+`</div>`;
+      card.innerHTML=`<div class="qhead"><span class="qnum">${t.icon} Aufgabe ${q}/25</span><span class="qtitle">${t.title}</span><span class="diff">${stars}</span></div>`+
+        `<div class="prompt">${t.prompt}</div>`+body;
+      app.appendChild(card);
+      if(s.solved){
+        const fb=card.querySelector(".fb");fb.className="fb ok";
+        fb.innerHTML=`✅ Gelöst! <div class="why">${t.explain}</div>`;
+      }
+      wire(card,t);
+    }
+  }
+  if(solvedCount()===TASKS.length&&!document.querySelector(".done")){
+    const d=document.createElement("div");d.className="done";
+    d.innerHTML=`<div class="confetti">🎉🔄🎉</div><h2>Zyklus geschlossen!</h2>
+      <p style="color:var(--muted)">Alle 25 Aufgaben — von G1/S/G2 über die fünf Mitose-Phasen bis zu Cytokinese, Bakterien und Krebs. Du bist bereit für die Prüfung.</p>`;
+    app.appendChild(d);
+  }
+  updateStats();
+}
+function wire(card,t){
+  const s=st(t.id);
+  const fb=card.querySelector(".fb");
+  const hintBtn=card.querySelector(".tools button");
+  if(t.type==="mc"){
+    card.querySelectorAll(".opt").forEach(o=>{
+      o.addEventListener("click",()=>{
+        if(s.solved)return;
+        const i=+o.dataset.i;
+        s.attempts++;
+        if(i===t.correct){grade(t,fb,true);}
+        else{
+          o.classList.add("wrong");
+          fb.className="fb err";
+          fb.innerHTML=`Das war nicht ganz. Versuch es nochmal — schau dir die Optionen genau an.`;
+          if(s.attempts>=2)fb.innerHTML+=`<div class="why">💡 Tipp: ${t.hint}</div>`;
+          save();updateStats();
+        }
+      });
+    });
+  }else{
+    const inp=card.querySelector("input");
+    const btn=card.querySelector(".primary");
+    const check=()=>{
+      if(s.solved)return;
+      const raw=inp.value.trim();
+      if(raw===""){fb.className="fb err";fb.textContent="Bitte etwas eingeben.";return;}
+      s.attempts++;
+      let ok;
+      if(t.type==="text"){
+        ok=t.answers.some(a=>norm(a)===norm(raw));
+      }else{
+        const v=parseFloat(raw.replace(/,/g,".").replace(/[^\d.eE+\-]/g,""));
+        ok=!isNaN(v)&&Math.abs(v-t.answer)<=t.tol;
+      }
+      if(ok){inp.disabled=true;btn.disabled=true;grade(t,fb,true);}
+      else{
+        fb.className="fb err";
+        fb.innerHTML=`Noch nicht — versuch es erneut.${t.type==="text"?" <span class='unit'>(Tipp: nur der reine Begriff, ohne Artikel)</span>":""}`;
+        if(s.attempts>=2)fb.innerHTML+=`<div class="why">💡 ${t.hint}</div>`;
+        if(s.attempts>=3){fb.innerHTML+=`<div class="why">🔎 Lösung: ${t.explain}</div>`;}
+        save();updateStats();
+      }
+    };
+    btn.addEventListener("click",check);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+  }
+  hintBtn.addEventListener("click",()=>{
+    if(s.hint||s.solved)return;
+    s.hint=true;fb.className="fb hint";fb.innerHTML=`💡 ${t.hint}`;save();updateStats();
+  });
+}
+function grade(t,fb,ok){
+  const s=st(t.id);
+  if(s.solved)return;
+  s.solved=true;
+  let p=10-3*Math.max(0,s.attempts-1)-(s.hint?2:0);
+  s.pts=Math.max(1,p);
+  S.streak++;
+  save();
+  fb.className="fb ok";
+  fb.innerHTML=`✅ Richtig! +${s.pts} Punkte<div class="why">${t.explain}</div>`;
+  const card=document.getElementById("card"+t.id);card.classList.add("solved");
+  const inp=card.querySelector("input");if(inp)inp.disabled=true;
+  const btn=card.querySelector(".primary");if(btn)btn.disabled=true;
+  card.querySelectorAll(".opt").forEach(o=>{o.style.pointerEvents="none";if(+o.dataset.i===t.correct)o.classList.add("right");});
+  const hb=card.querySelector(".tools button");if(hb)hb.disabled=true;
+  render();
+  const nc=document.getElementById("card"+t.id);
+  if(nc)nc.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function updateStats(){
+  document.getElementById("pts").textContent=totalPts();
+  document.getElementById("streak").textContent=S.streak;
+  document.getElementById("pfill").style.width=(solvedCount()/TASKS.length*100)+"%";
+}
+let resetArm=0;
+document.getElementById("resetBtn").addEventListener("click",e=>{
+  const b=e.currentTarget;
+  if(b.dataset.armed){S={t:{},streak:0};MEM=null;if(LS)try{LS.removeItem(KEY)}catch(err){}render();return;}
+  b.dataset.armed="1";b.textContent="Sicher? Nochmal tippen";
+  setTimeout(()=>{b.textContent="↺ Reset";delete b.dataset.armed;},4000);
+});
+render();
+</script>
+</body>
+</html>
