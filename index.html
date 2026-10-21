@@ -26,9 +26,15 @@
   .t{font-weight:700}
   .d{color:var(--muted);font-size:.88rem}
   .foot{margin-top:32px;color:var(--muted);font-size:.8rem;text-align:center}
+  #refreshBtn{position:fixed;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:20;
+    background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:999px;
+    padding:7px 14px;font-size:.82rem;cursor:pointer;touch-action:manipulation;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  #refreshBtn:hover{border-color:var(--accent);color:var(--text)}
 </style>
 </head>
 <body>
+<button id="refreshBtn" title="Neueste Version vom Server laden">↻ Neu laden</button>
 <div class="wrap">
   <h1>Luca's <span>Lernmaterial</span> 🧪</h1>
   <p class="sub">Lern-Apps & Spielereien — laufen im Browser, auch auf dem iPhone.</p>
@@ -61,5 +67,14 @@
 
   <div class="foot">GitHub Pages · l385-glitch</div>
 </div>
+<script>
+document.getElementById("refreshBtn").addEventListener("click", async (e)=>{
+  const b=e.currentTarget;
+  b.textContent="↻ Lädt…"; b.disabled=true;
+  try{ if(window.caches){const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k)));} }catch(err){}
+  // Cache-Neustart: Seite ohne alten Cache neu anfragen
+  location.href = location.pathname + "?v=" + Date.now();
+});
+</script>
 </body>
 </html>
