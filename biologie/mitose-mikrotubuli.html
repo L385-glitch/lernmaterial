@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MT-Labor">
+<title>Mikrotubuli-Labor – Mitose lernen</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b23; --panel2:#1c232e; --line:#2a3441;
+    --text:#e6edf3; --muted:#8b98a9; --accent:#4cc9f0; --accent2:#7b5cff;
+    --ok:#3ddc84; --warn:#ffb020; --err:#ff5c72;
+    --mt-pole:#ff5c72; --mt-kin:#3ddc84; --mt-ast:#b07cff;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%, #1a2740 0%, var(--bg) 55%);
+    color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;
+    -webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+  .wrap{max-width:860px;margin:0 auto;padding:16px 16px calc(80px + env(safe-area-inset-bottom))}
+  header{position:sticky;top:0;z-index:10;background:rgba(14,17,22,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+  .hbar{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:1.05rem;letter-spacing:.3px}
+  .logo span{color:var(--accent)}
+  .stats{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:.85rem;color:var(--muted)}
+  .pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;color:var(--text)}
+  .pill b{color:var(--accent)}
+  .pbar{width:100%;max-width:860px;margin:8px auto 0;height:8px;background:var(--panel2);border-radius:999px;overflow:hidden}
+  .pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+  .intro{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:18px 0}
+  .intro h1{margin:0 0 6px;font-size:1.4rem}
+  .intro p{margin:6px 0;color:var(--muted)}
+  .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .legend span{font-size:.8rem;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 9px;color:var(--muted)}
+  .diagram{background:#0b0f14;border:1px solid var(--line);border-radius:12px;margin:14px 0;padding:8px}
+  .diagram svg{display:block;width:100%;height:auto}
+  .dlegend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:6px;font-size:.82rem;color:var(--muted)}
+  .dlegend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+  .level{margin:34px 0 8px;display:flex;align-items:center;gap:10px}
+  .level h2{margin:0;font-size:1.15rem}
+  .level .tag{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:2px 8px;background:var(--panel2)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0;position:relative}
+  .card.solved{border-color:rgba(61,220,132,.45)}
+  .card.locked{opacity:.45;filter:grayscale(.4)}
+  .qhead{display:flex;gap:10px;align-items:baseline;margin-bottom:8px}
+  .qnum{font-size:.75rem;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px 8px;white-space:nowrap}
+  .qtitle{font-weight:700}
+  .diff{margin-left:auto;font-size:.75rem;letter-spacing:1px;color:var(--warn)}
+  .prompt{margin:4px 0 12px}
+  .prompt code, .fml{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--panel2);
+    border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.95em}
+  .opts{display:grid;gap:8px}
+  .opt{display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;cursor:pointer;transition:border-color .15s, background .15s;color:var(--text);
+    font-size:.95rem;line-height:1.45;
+    touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  .opt:hover{border-color:var(--accent)}
+  .opt .dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);flex:none;margin-top:3px}
+  .opt.pick{border-color:var(--accent)} .opt.pick .dot{border-color:var(--accent);background:var(--accent)}
+  .opt.right{border-color:var(--ok)} .opt.right .dot{border-color:var(--ok);background:var(--ok)}
+  .opt.wrong{border-color:var(--err)} .opt.wrong .dot{border-color:var(--err);background:var(--err)}
+  .answerrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  input[type=text]{background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);
+    padding:10px 12px;font-size:1rem;width:min(240px,100%)}
+  input[type=text]:focus{outline:none;border-color:var(--accent)}
+  button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;
+    padding:10px 14px;font-size:.92rem;cursor:pointer;touch-action:manipulation}
+  button.primary{background:linear-gradient(130deg,var(--accent),var(--accent2));border:none;color:#0b1020;font-weight:700}
+  button.ghost{background:transparent;color:var(--muted)}
+  button:disabled{opacity:.5;cursor:default}
+  .unit{color:var(--muted);font-size:.9rem}
+  .fb{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:.92rem;display:none}
+  .fb.ok{display:block;background:rgba(61,220,132,.12);border:1px solid rgba(61,220,132,.4)}
+  .fb.err{display:block;background:rgba(255,92,114,.1);border:1px solid rgba(255,92,114,.4)}
+  .fb.hint{display:block;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.4)}
+  .fb .why{color:var(--muted);margin-top:6px}
+  .tools{margin-top:10px;display:flex;gap:8px}
+  .lockmsg{padding:14px;color:var(--muted);text-align:center}
+  .lockmsg b{color:var(--warn)}
+  .done{margin-top:26px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .done h2{margin:0 0 8px}
+  .confetti{font-size:2rem}
+  .foot{margin-top:30px;text-align:center;color:var(--muted);font-size:.8rem}
+  @media(max-width:560px){
+    .stats{margin-left:0;width:100%}
+    .answerrow input[type=text]{flex:1 1 160px;width:auto}
+    .answerrow button.primary{flex:1}
+    .qhead{flex-wrap:wrap}
+    .diff{margin-left:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="logo">🧬 Mikro<span>tubuli</span>-Labor</div>
+    <div class="stats">
+      <span class="pill">Punkte <b id="pts">0</b>/250</span>
+      <span class="pill">Serie <b id="streak">0</b>🔥</span>
+      <button class="ghost" id="resetBtn" title="Fortschritt löschen">↺ Reset</button>
+    </div>
+  </div>
+  <div class="pbar"><i id="pfill"></i></div>
+</header>
+
+<div class="wrap">
+  <div class="intro">
+    <h1>Mitose: Der Spindelapparat 🔬</h1>
+    <p>25 Aufgaben zu den <b>drei Mikrotubuli-Formen</b> des Spindelapparats — Astral, polar und Kinetochor —
+    plus Prometaphase, Kinetochor und „Tauziehen“. Nach 3 Lösungen pro Level öffnet sich das nächste Level.</p>
+    <div class="diagram" aria-label="Schema des Spindelapparats">
+      <svg viewBox="0 0 520 300" role="img">
+        <!-- Zellmembran -->
+        <ellipse cx="260" cy="150" rx="245" ry="135" fill="rgba(255,92,114,.05)" stroke="#e05c6a" stroke-width="2.5"/>
+        <!-- Astral-Mikrotubuli (lila) -->
+        <g stroke="#b07cff" stroke-width="2.5" stroke-linecap="round">
+          <line x1="80" y1="150" x2="18" y2="80"/><line x1="80" y1="150" x2="14" y2="150"/><line x1="80" y1="150" x2="18" y2="220"/>
+          <line x1="80" y1="150" x2="55" y2="55"/><line x1="80" y1="150" x2="55" y2="245"/>
+          <line x1="440" y1="150" x2="502" y2="80"/><line x1="440" y1="150" x2="506" y2="150"/><line x1="440" y1="150" x2="502" y2="220"/>
+          <line x1="440" y1="150" x2="465" y2="55"/><line x1="440" y1="150" x2="465" y2="245"/>
+        </g>
+        <!-- Polare Mikrotubuli (rot), Pole überlappend -->
+        <g stroke="#ff5c72" stroke-width="2.5" stroke-linecap="round">
+          <line x1="80" y1="150" x2="330" y2="105"/><line x1="80" y1="150" x2="330" y2="195"/>
+          <line x1="440" y1="150" x2="190" y2="105"/><line x1="440" y1="150" x2="190" y2="195"/>
+        </g>
+        <!-- Kinetochor-Mikrotubuli (grün) -->
+        <g stroke="#3ddc84" stroke-width="3" stroke-linecap="round">
+          <line x1="80" y1="150" x2="243" y2="138"/><line x1="80" y1="150" x2="243" y2="162"/>
+          <line x1="440" y1="150" x2="277" y2="138"/><line x1="440" y1="150" x2="277" y2="162"/>
+        </g>
+        <!-- Chromosom (X) in der Mitte -->
+        <g stroke="#e6edf3" stroke-width="7" stroke-linecap="round">
+          <line x1="243" y1="122" x2="277" y2="178"/><line x1="277" y1="122" x2="243" y2="178"/>
+        </g>
+        <!-- Kinetochore -->
+        <circle cx="243" cy="150" r="5" fill="#3ddc84"/><circle cx="277" cy="150" r="5" fill="#3ddc84"/>
+        <!-- Centrosome / Pole -->
+        <circle cx="80" cy="150" r="10" fill="#7b5cff" stroke="#b07cff" stroke-width="2"/>
+        <circle cx="440" cy="150" r="10" fill="#7b5cff" stroke="#b07cff" stroke-width="2"/>
+        <!-- Labels -->
+        <g font-size="13" fill="#8b98a9" font-family="system-ui,sans-serif">
+          <text x="52" y="185">Centrosom (Pol)</text>
+          <text x="205" y="215">Chromosom</text>
+          <text x="212" y="95">Kinetochor</text>
+        </g>
+      </svg>
+      <div class="dlegend">
+        <span><i style="background:var(--mt-ast)"></i>Astral-MT (Aster)</span>
+        <span><i style="background:var(--mt-pole)"></i>Polare MT</span>
+        <span><i style="background:var(--mt-kin)"></i>Kinetochor-MT</span>
+      </div>
+    </div>
+    <div class="legend">
+      <span>💡 Tipp kostet 2 Punkte</span><span>Erster Versuch = volle Punkte</span>
+      <span>Rechtschreibung & Gross/klein egal</span><span>Fortschritt wird lokal gespeichert</span>
+    </div>
+    <div id="lsWarn" style="display:none;margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.4);font-size:.9rem">
+      ⚠️ Kein dauerhafter Speicher verfügbar — du bist vermutlich in der iPhone-<b>Dateien-Vorschau</b>. Alles funktioniert, aber der Fortschritt gilt nur für diese Sitzung. Tipp: Teilen-Symbol → „In Safari öffnen“ bzw. die Datei in eine Browser-App wie „Documents“ laden.
+    </div>
+  </div>
+  <div id="app"></div>
+  <div class="foot">Mikrotubuli-Labor · Fortschritt im Browser gespeichert (localStorage)</div>
+</div>
+
+<script>
+"use strict";
+const LEVELS=[
+ {n:1,name:"Grundlagen: Zelle & Spindelapparat",emoji:"🧬",tag:"Was ist was?"},
+ {n:2,name:"Die drei Mikrotubuli-Formen",emoji:"🧵",tag:"Astral · polar · Kinetochor"},
+ {n:3,name:"Kinetochor & Prometaphase",emoji:"🎯",tag:"Suchen & Fangen"},
+ {n:4,name:"Funktion & Dynamik",emoji:"⚙️",tag:"Kräfte am Spindelapparat"},
+ {n:5,name:"Transfer & Medizin",emoji:"🏆",tag:"Checkpoint & Chemotherapie"}
+];
+// type: mc (options, correct idx) | text (answers: [akzeptierte Lösungen]) | input (answer+tol)
+const TASKS=[
+// ---------- Level 1 ----------
+{id:1,level:1,icon:"🧵",title:"Was sind Mikrotubuli?",type:"mc",
+ prompt:'Mikrotubuli sind der Baustoff des Spindelapparats. Was ist das eigentlich?',
+ options:["Hohle Eiweiss-Röhrchen des Zytoskeletts, aufgebaut aus Tubulin",
+          "Fadenförmige DNA-Stücke im Zellkern",
+          "Ringförmige Lipidmembranen um die Chromosomen",
+          "Kohlenhydrat-Ketten in der Zellmembran"],
+ correct:0,
+ hint:"Sie gehören zum Zytoskelett — wie ein Gerüst aus Röhrchen.",
+ explain:"Mikrotubuli sind hohle Röhrchen (ca. 25 nm Durchmesser) aus je α- und β-Tubulin. Sie gehören zum Zytoskelett, sind dynamisch (können schnell wachsen und schrumpfen) und bilden in der Mitose den Spindelapparat."},
+{id:2,level:1,icon:"🔤",title:"Der Baustein",type:"text",
+ prompt:'Wie heisst das <b>Eiweiss</b>, aus dem Mikrotubuli aufgebaut sind? (Ein Wort)',
+ answers:["tubulin","mikrotubulin","alphabetatubulin","alphatubulin","betatubulin"],
+ hint:"Es beginnt mit T und gibt den Mikrotubuli ihren Namen.",
+ explain:"Tubulin (α- und β-Tubulin lagern sich zu Protofilamenten und dann zur Röhrchen-Wand zusammen)."},
+{id:3,level:1,icon:"📍",title:"Wer organisiert die Pole?",type:"mc",
+ prompt:'An den beiden Enden des Spindelapparats sitzen Organisationszentren für die Mikrotubuli. Wie heissen sie?',
+ options:["Centrosome (MTOC)",
+          "Ribosomen",
+          "Lysosomen",
+          "Golgi-Apparate"],
+ correct:0,
+ hint:"Sie enthalten je ein Zentriolen-Paar und verdoppeln sich vor der Teilung.",
+ explain:"Das Centrosom ist das wichtigste Mikrotubuli-Organisationszentrum (MTOC) der tierischen Zelle. Es verdoppelt sich vor der Mitose; die beiden Tochter-Centrosome werden zu den zwei Spindelpolen."},
+{id:4,level:1,icon:"🔢",title:"Wie viele Pole?",type:"input",
+ prompt:'Der Spindelapparat der Mitose ist <b>bipolar</b>. Aus wie vielen Centrosomen/Polen besteht er?',
+ answer:2,tol:0.01,
+ hint:"Bipolar = zwei.",
+ explain:"Genau zwei Pole. Je ein Centrosom wandert zu jeder Seite — dazwischen entsteht die Spindel, an der die Chromosomen hängend getrennt werden."},
+{id:5,level:1,icon:"⏳",title:"Wann entsteht der Spindelapparat?",type:"mc",
+ prompt:'In welcher Phase der Mitose beginnt der Spindelapparat, die Chromosomen zu „suchen und zu fangen“, und die Kernhülle fragmentiert?',
+ options:["Prometaphase",
+          "Interphase (G1)",
+          "Zytokinese",
+          "G2-Phase"],
+ correct:0,
+ hint:"Sie liegt zwischen Prophase und Metaphase — die Kernhülle bricht auf.",
+ explain:"In der Prometaphase fragmentiert die Kernhülle, die Mikrotubuli dringen in das Kerngebiet ein und binden an die Kinetochore. Davor (Prophase) kondensieren die Chromosomen, danach (Metaphase) sind sie ausgerichtet."},
+// ---------- Level 2 ----------
+{id:6,level:2,icon:"🔢",title:"Wie viele Grundformen?",type:"input",
+ prompt:'Im Spindelapparat unterscheidet man <b>Hauptformen</b> von Mikrotubuli: Astral-, polare und Kinetochor-Mikrotubuli. Wie viele sind das?',
+ answer:3,tol:0.01,
+ hint:"Zähl sie auf: Astral…, polar…, Kinetochor…",
+ explain:"Drei Formen: 1) Astral-Mikrotubuli (zu Zellperipherie), 2) polare/interpolare Mikrotubuli (Pol ↔ Pol), 3) Kinetochor-Mikrotubuli (Pol ↔ Chromosom)."},
+{id:7,level:2,icon:"🎯",title:"Vom Pol zum Chromosom",type:"text",
+ prompt:'Wie heissen die Mikrotubuli, die vom Spindel<strong>pol</strong> zum <strong>Chromosom</strong> laufen und dort andocken? (Bindestrich erlaubt)',
+ answers:["kinetochormikrotubuli","kinetochoremikrotubuli","kinetochormikrotubule","kinetochoremikrotubule","kinetochormt","kinetochoremt"],
+ hint:"Sie docken am Kinetochor an — der Name steckt schon drin.",
+ explain:"Kinetochor-Mikrotubuli wachsen vom Centrosom zum Kinetochor des Chromosoms und verbinden es (grün im Schema). Jedes Schwesterchromatid wird von Mikrotubuli des <em>gegenüberliegenden</em> Pols gehalten."},
+{id:8,level:2,icon:"⭐",title:"Zur Zellperipherie",type:"mc",
+ prompt:'Diese Mikrotubuli wachsen vom Centrosom nach <b>aussen zur Zellmembran / zum Zellcortex</b> — nie zu den Chromosomen. Welche?',
+ options:["Astral-Mikrotubuli",
+          "Kinetochor-Mikrotubuli",
+          "Polare Mikrotubuli",
+          "Interphase-Mikrotubuli"],
+ correct:0,
+ hint:"Sie formen einen Stern um das Centrosom.",
+ explain:"Astral-Mikrotubuli strahlen sternförmig vom Centrosom zur Zellperipherie (lila im Schema). Sie verankern und positionieren/drehen den Spindelapparat in der Zelle."},
+{id:9,level:2,icon:"🔤",title:"Name des Sterns",type:"text",
+ prompt:'Die sternförmige Anordnung der Astral-Mikrotubuli um das Centrosom hat einen eigenen Namen. Wie heisst er? (Ein Wort)',
+ answers:["aster","astern","stern","asteren"],
+ hint:"Griechisch für „Stern“ — daher auch „Astral“.",
+ explain:"Aster (Plural: Astern, griech. „Stern“). Die Mikrotubuli heissen deshalb astral = den Stern betreffend."},
+{id:10,level:2,icon:"↔️",title:"Pol ↔ Pol",type:"mc",
+ prompt:'Polare (interpolar) Mikrotubuli verlaufen…',
+ options:["von einem Pol zum anderen und überlappen in der Mitte",
+          "nur vom Pol zur Kernhülle",
+          "vom Chromosom zurück zum Chromosom",
+          "senkrecht auf die Äquatorialebene, ohne sich zu berühren"],
+ correct:0,
+ hint:"Im Schema rot: sie reichen vom linken Pol fast bis zum rechten — und umgekehrt.",
+ explain:"Polare Mikrotubuli wachsen von beiden Polen aufeinander zu und überlappen in der Zellmitte antiparallel. Motorproteine an den Überlappungen wirken auf die Spindellänge ein."},
+{id:11,level:2,icon:"🎨",title:"Farben zuordnen",type:"mc",
+ prompt:'Im Schema oben: Welche Farbzuordnung der drei MT-Typen stimmt?',
+ options:["Grün = Kinetochor-MT, Rot = polare MT, Lila = Astral-MT",
+          "Rot = Kinetochor-MT, Grün = polare MT, Lila = Astral-MT",
+          "Lila = Kinetochor-MT, Grün = polare MT, Rot = Astral-MT",
+          "Blau = Kinetochor-MT, Gelb = polare MT, Orange = Astral-MT"],
+ correct:0,
+ hint:"Grün führt zu den Chromosomen — „Kinetochor = andocken“.",
+ explain:"Grün = Kinetochor-MT (zum Chromosom), Rot = polare MT (Pol↔Pol), Lila = Astral-MT (Stern zur Peripherie). Genau wie in deiner handschriftlichen Zeichnung (Pole-MT rot, Kinetochore-MT grün, Aster lila)."},
+// ---------- Level 3 ----------
+{id:12,level:3,icon:"🪢",title:"Was ist das Kinetochor?",type:"mc",
+ prompt:'Das Kinetochor ist…',
+ options:["ein Proteinkomplex an der Centromerregion, an dem Mikrotubuli andocken",
+          "ein Stück DNA zwischen zwei Genen",
+          "eine Ausstülpung der Kernhülle",
+          "ein Organell in der Nähe des Centrosoms"],
+ correct:0,
+ hint:"Griech. „kineto“ = Bewegung — hier ist die Andockstelle der Spindelfasern.",
+ explain:"Das Kinetochor ist eine mehrschichtige Proteinstruktur am Centromer jedes Chromatids. Es ist die Andockstelle für Kinetochor-Mikrotubuli und übermittelt Zugkräfte und Checkpoint-Signale."},
+{id:13,level:3,icon:"🫧",title:"Die Kernhülle in der Prometaphase",type:"mc",
+ prompt:'Was passiert mit der Kernhülle (Kernmembran) in der Prometaphase?',
+ options:["Sie fragmentiert in kleine Membranvesikel",
+          "Sie bleibt intakt und die MT wachsen hindurch",
+          "Sie wandert in die Äquatorialebene",
+          "Sie verdoppelt sich"],
+ correct:0,
+ hint:"Auf dem Präparat siehst du „Fragmente der Kernhülle“.",
+ explain:"Die Kernhülle wird phosphoryliert und fragmentiert in Vesikel — erst dadurch können die Cytoplasma-Mikrotubuli zu den Chromosomen vordringen. Nach der Mitose wird sie wieder aufgebaut."},
+{id:14,level:3,icon:"🤝",title:"Bi-Orientierung",type:"mc",
+ prompt:'Ein Chromosom ist „bi-orientiert“, wenn…',
+ options:["seine beiden Kinetochore (je Chromatid) an Mikrotubuli <em>verschiedener</em> Pole gebunden sind",
+          "beide Kinetochore am selben Pol hängen",
+          "gar kein Kinetochor einen Mikrotubulus berührt",
+          "das Chromosom quer auf einem einzigen Mikrotubulus liegt"],
+ correct:0,
+ hint:"Zwei Pole, zwei Seiten — wie Tauziehen mit zwei Teams.",
+ explain:"Die Kinetochore der beiden Schwesterchromatiden zeigen zu entgegengesetzten Polen (side-oriented / amphitel). Nur so entsteht Spannung über das Chromosom — Voraussetzung für die korrekte Trennung."},
+{id:15,level:3,icon:"🪆",title:"Das X besteht aus zwei…",type:"text",
+ prompt:'Ein kondensiertes Mitose-Chromosom (die X-Form im Schema) besteht aus zwei identischen Hälften. Wie heissen sie?',
+ answers:["schwesterchromatiden","chromatiden","schwesterchromatide","chromatide"],
+ hint:"Sie wurden im S synchron repliziert und hängen am Centromer zusammen.",
+ explain:"Schwesterchromatiden: nach der DNA-Replikation zwei identische Kopien, am Centromer verbunden. In der Anaphase werden sie getrennt — jedes wird zum eigenen Chromosom der Tochterzelle."},
+{id:16,level:3,icon:"🪄",title:"„Suchen und Fangen“",type:"mc",
+ prompt:'Die Kinetochor-Mikrotubuli „tasten“ nach den Chromosomen (search & capture). Wovon hängt ab, ob ein Treffer stabil bleibt?',
+ options:["Ob das Kinetochor korrekt (am richtigen Pol, unter Spannung) andockt",
+          "Ob der Mikrotubulus zufällig die Zellmembran berührt",
+          "Ob das Chromosom gerade DNA repliziert",
+          "Ob zwei Chromosomen sich berühren"],
+ correct:0,
+ hint:"Falsche Bindungen werden gelöst; korrekte Bindungen stabilisiert die Spannung.",
+ explain:"Mikrotubuli wachsen und schrumpfen ständig. Nur korrekte, spannungserzeugende Kinetochor-Bindungen werden stabilisiert; fehlerhafte (z.B. beide Kinetochore am selben Pol) werden wieder gelöst und neu eingefangen."},
+// ---------- Level 4 ----------
+{id:17,level:4,icon:"🧲",title:"Tauziehen zur Äquatorialebene",type:"mc",
+ prompt:'Wieso wandern die Chromosomen in der Prometaphase/Metaphase zur Äquatorialebene („Tauziehen“)?',
+ options:["Gegensinnige Zugkräfte der Kinetochor-MT beider Pole + Depolymerisation am Kinetochor stellen sie ein",
+          "Die Zellmembran drückt sie von beiden Seiten in die Mitte",
+          "Sie gleiten aktiv auf den Kinetochor-MT wie auf einer Leiter zur Spitze",
+          "Die Schwerkraft der Centrosome zieht sie an"],
+ correct:0,
+ hint:"Beide Pole ziehen — wer verliert, rückt zur Mitte; die MT schrumpfen am Kinetochor-Ende.",
+ explain:"Kinetochor-Mikrotubuli werden am Kinetochor-Ende depolymerisiert (Pac-Man-Mechanismus) und ziehen das Chromatid zum Pol; polare MT und Motorproteine wirken entgegen. Bei gleicher Kraft beider Pole sitzt das Chromosom in der Mitte."},
+{id:18,level:4,icon:"📏",title:"Aufgabe der überlappenden polaren MT",type:"mc",
+ prompt:'Wozu dienen die antiparallel überlappenden polaren Mikrotubuli (rot im Schema)?',
+ options:["Sie erzeugen über Motorproteine Abstoßungskräfte und bestimmen/verlängern die Spindellänge",
+          "Sie transportieren Ribosomen zu den Chromosomen",
+          "Sie verbinden Schwesterchromatiden miteinander",
+          "Sie bauen die Kernhülle wieder auf"],
+ correct:0,
+ hint:"Kinesine schieben die überlappenden MT aneinander vorbei — weg vom Pol.",
+ explain:"Motorproteine (u.a. Kinesine) schieben die überlappenden polaren MT aneinander vorbei und drücken die Pole auseinander — wichtig für die Spindelaufbau- und die Pol-Elongation in der Anaphase B."},
+{id:19,level:4,icon:"⚓",title:"Wozu der Aster?",type:"mc",
+ prompt:'Astral-Mikrotubuli reichen bis zum Zellcortex. Was ist ihre Hauptaufgabe?',
+ options:["Sie verankern den Spindelapparat, positionieren und drehen ihn in der Zelle",
+          "Sie replizieren die DNA an den Polen",
+          "Sie lösen die Kernhülle auf",
+          "Sie bilden die contractile Ringstruktur bei der Zytokinese"],
+ correct:0,
+ hint:"Denk an Seile, die das Centrosom an der Zellwand festhalten und zentrieren.",
+ explain:"Astral-MT koppeln die Pole über Cortex-Motorproteine (z.B. Dynein) an die Zellrinde: Sie zentrieren den Spindelapparat, drehen ihn aus und ziehen in der Anaphase zusätzlich die Pole auseinander."},
+{id:20,level:4,icon:"🔎",title:"Richtig oder falsch?",type:"mc",
+ prompt:'Welche Aussage ist <u>falsch</u>?',
+ options:["Kinetochor-Mikrotubuli binden an Fragmente der Kernhülle",
+          "Die Kernhülle fragmentiert in der Prometaphase",
+          "Das Centrosom liegt am Spindelpol",
+          "Astral-Mikrotubuli strahlen zur Zellperipherie"],
+ correct:0,
+ hint:"Die Kernhüllen-Fragmente sind nur Trümmer — die Bindungsstelle liegt am Chromosom.",
+ explain:"Kinetochor-MT binden an das Kinetochor am Chromosom, nicht an Kernhüllen-Fragmente. Die Fragmente der Kernhülle (im Fluoreszenzbild sichtbar) sind Membranüberreste, die nach der Mitose die Kernhülle neu bilden."},
+{id:21,level:4,icon:"✅",title:"Wann ist die Metaphase erreicht?",type:"mc",
+ prompt:'Die Chromosomen haben die Äquatorialebene erreicht und die Metaphase beginnt, wenn…',
+ options:["alle Chromosomenpaare bi-orientiert sind und unter Spannung in der Mitte stehen",
+          "mindestens die Hälfte der Chromosomen einen Mikrotubulus berührt",
+          "die Kernhülle sich gerade zu fragmentieren beginnt",
+          "die Schwesterchromatiden schon getrennt zu den Polen wandern"],
+ correct:0,
+ hint:"Alle müssen bereit sein — nicht nur die meisten.",
+ explain:"Erst wenn praktisch alle Kinetochore korrekt bi-orientiert und spannungsgeladen in der Äquatorialebene ausgerichtet sind, gibt der Spindel-Checkpoint das Signal zur weiteren Progression."},
+// ---------- Level 5 ----------
+{id:22,level:5,icon:"💊",title:"Chemotherapie & Mikrotubuli",type:"mc",
+ prompt:'Medikamente wie Taxol (stabilisiert MT) oder Colchicin/Vinblastin (verhindern MT-Aufbau) stoppen die Zellteilung. Warum?',
+ options:["Ohne dynamische Mikrotubuli kann kein funktionierender Spindelapparat die Chromosomen trennen",
+          "Sie lösen direkt die DNA der Chromosomen auf",
+          "Sie sprengen die Zellmembran",
+          "Sie hemmen die Ribosomen bei der Eiweissherstellung"],
+ correct:0,
+ hint:"Starr oder gar kein Spindelapparat = keine saubere Chromosomentrennung.",
+ explain:"Der Spindelapparat braucht dynamische Mikrotubuli (Wachsen + Schrumpfen). Taxol fixiert sie starr, Colchicin verhindert den Aufbau — beides arretiert die Zelle in der Mitose und löst den Zelltod aus. Schnell teilende Zellen (Tumore) treffen es am härtesten."},
+{id:23,level:5,icon:"🛑",title:"Fehlerhafte Bindung?",type:"mc",
+ prompt:'Ein Kinetochor hat noch keinen Mikrotubulus gefangen. Was passiert?',
+ options:["Der Spindel-Checkpoint (SAC) hält den Zellzyklus auf, bis alle Kinetochore korrekt angebunden sind",
+          "Die Zelle teilt sich trotzdem — Fehler werden ignoriert",
+          "Das Chromosom wird sofort abgebaut",
+          "Die Kernhülle bildet sich sofort neu"],
+ correct:0,
+ hint:"Unbelegte Kinetochore senden ein „Warten“-Signal aus.",
+ explain:"Freie/fehlerhaft gebundene Kinetochore aktivieren den Spindle Assembly Checkpoint: Er blockiert die APC/C-Einheit, bis alle Chromosomen bi-orientiert sind — Schutz vor Aneuploidie (falscher Chromosomenzahl)."},
+{id:24,level:5,icon:"🔤",title:"Wie geht's weiter?",type:"text",
+ prompt:'Nach der Prometaphase folgen die Phasen der Mitose in fester Reihenfolge: Prophase → Prometaphase → <b>?</b> → Anaphase → Telophase. Wie heisst die fehlende Phase?',
+ answers:["metaphase"],
+ hint:"Sie beginnt mit M — die Chromosomen stehen in der Mitte.",
+ explain:"Metaphase: alle Chromosomen sind in der Äquatorialebene ausgerichtet. Danach trennt die Anaphase die Schwesterchromatiden, die Telophase baut die Kernhüllen neu auf."},
+{id:25,level:5,icon:"🌱",title:"Trickfrage: Pflanzenzelle",type:"mc",
+ prompt:'Pflanzenzellen haben <u>keine</u> Centrosomen/Zentriolen. Wie bilden sie trotzdem eine bipolare Spindel?',
+ options:["Mehrere Mikrotubuli-Organisationszentren an der Kernhülle organisieren die Spindel und ordnen sich bipolar an",
+          "Gar nicht — Pflanzenzellen teilen sich ohne Spindelapparat",
+          "Sie übernehmen Centrosome von Nachbarzellen",
+          "Die Chromosomen organisieren die Pole komplett allein ohne jede MTOC"],
+ correct:0,
+ hint:"Auch ohne Zentriolen gibt es MTOCs — nur verteilt statt als ein Centrosom.",
+ explain:"Pflanzen nutzen viele MTOCs (u.a. an der aufgelösten Kernhülle), die sich zu zwei gegenläufigen Pole-Regionen umorganisieren. Der Spindelapparat funktioniert auch ohne Zentriolen — ein schönes Beispiel, dass die drei MT-Formen das Entscheidende sind, nicht das Centrosom selbst. 🏆"}
+];
+
+const KEY="mt-labor-v1";
+const LS=(()=>{try{const k="__t";localStorage.setItem(k,"1");localStorage.removeItem(k);return localStorage;}catch(e){return null;}})();
+let MEM=null;
+let S=load();
+function load(){try{const raw=LS?LS.getItem(KEY):MEM;if(raw){const d=JSON.parse(raw);if(d&&d.t)return d;}}catch(e){}return{t:{},streak:0};}
+function save(){const j=JSON.stringify(S);MEM=j;if(LS){try{LS.setItem(KEY,j);}catch(e){showStorageWarn();}}else showStorageWarn();}
+function showStorageWarn(){const w=document.getElementById("lsWarn");if(w)w.style.display="block";}
+function st(id){return S.t[id]||(S.t[id]={solved:false,attempts:0,hint:false,pts:0});}
+function solvedCount(){return TASKS.filter(t=>st(t.id).solved).length;}
+function totalPts(){return TASKS.reduce((a,t)=>a+st(t.id).pts,0);}
+function levelSolved(n){return TASKS.filter(t=>t.level===n&&st(t.id).solved).length;}
+function levelUnlocked(n){
+  if(n===1)return true;
+  const need=Math.min(3,TASKS.filter(t=>t.level===n-1).length);
+  return levelSolved(n-1)>=need;
+}
+function norm(s){return s.toLowerCase().trim()
+  .replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss")
+  .replace(/[-\s_]/g,"");}
+
+const app=document.getElementById("app");
+function render(){
+  app.innerHTML="";
+  let q=0;
+  for(const lv of LEVELS){
+    const h=document.createElement("div");h.className="level";
+    h.innerHTML=`<h2>${lv.emoji} Level ${lv.n}: ${lv.name}</h2><span class="tag">${lv.tag}</span>`;
+    app.appendChild(h);
+    const unlocked=levelUnlocked(lv.n);
+    const tasks=TASKS.filter(t=>t.level===lv.n);
+    if(!unlocked){
+      const c=document.createElement("div");c.className="card locked";
+      const need=Math.min(3,tasks.length);
+      c.innerHTML=`<div class="lockmsg">🔒 Gelöst mindestens <b>${need}</b> Aufgaben aus Level ${lv.n-1}, um hier zu starten. (Aktuell: ${levelSolved(lv.n-1)}/${TASKS.filter(t=>t.level===lv.n-1).length})</div>`;
+      app.appendChild(c);continue;
+    }
+    for(const t of tasks){
+      q++;
+      const s=st(t.id);
+      const card=document.createElement("div");
+      card.className="card"+(s.solved?" solved":"");
+      card.id="card"+t.id;
+      const stars="★".repeat(lv.n)+"☆".repeat(5-lv.n);
+      let body="";
+      if(t.type==="mc"){
+        body+=`<div class="opts" id="opts${t.id}">`+t.options.map((o,i)=>
+          `<button class="opt" data-i="${i}"><span class="dot"></span><span>${o}</span></button>`).join("")+`</div>`;
+      }else{
+        body+=`<div class="answerrow"><input type="text" id="in${t.id}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${t.type==="text"?"Begriff eingeben…":"Antwort…"}" ${s.solved?"disabled":""}>`+
+          (t.unit?`<span class="unit">${t.unit}</span>`:``)+
+          `<button class="primary" id="chk${t.id}" ${s.solved?"disabled":""}>Prüfen</button></div>`;
+      }
+      body+=`<div class="fb" id="fb${t.id}"></div>`;
+      body+=`<div class="tools"><button class="ghost" id="hint${t.id}" ${s.hint||s.solved?"disabled":""}>💡 Tipp</button>`+
+        (s.solved?`<span class="unit">+${s.pts} Punkte</span>`:``)+`</div>`;
+      card.innerHTML=`<div class="qhead"><span class="qnum">${t.icon} Aufgabe ${q}/25</span><span class="qtitle">${t.title}</span><span class="diff">${stars}</span></div>`+
+        `<div class="prompt">${t.prompt}</div>`+body;
+      app.appendChild(card);
+      if(s.solved){
+        const fb=card.querySelector(".fb");fb.className="fb ok";
+        fb.innerHTML=`✅ Gelöst! <div class="why">${t.explain}</div>`;
+      }
+      wire(card,t);
+    }
+  }
+  if(solvedCount()===TASKS.length&&!document.querySelector(".done")){
+    const d=document.createElement("div");d.className="done";
+    d.innerHTML=`<div class="confetti">🎉🧬🎉</div><h2>Spindel komplett!</h2>
+      <p style="color:var(--muted)">Alle 25 Aufgaben — von den drei Mikrotubuli-Formen bis zum Spindel-Checkpoint. Du kennst den Spindelapparat in Prometaphase und Metaphase.</p>`;
+    app.appendChild(d);
+  }
+  updateStats();
+}
+function wire(card,t){
+  const s=st(t.id);
+  const fb=card.querySelector(".fb");
+  const hintBtn=card.querySelector(".tools button");
+  if(t.type==="mc"){
+    card.querySelectorAll(".opt").forEach(o=>{
+      o.addEventListener("click",()=>{
+        if(s.solved)return;
+        const i=+o.dataset.i;
+        s.attempts++;
+        if(i===t.correct){grade(t,fb,true);}
+        else{
+          o.classList.add("wrong");
+          fb.className="fb err";
+          fb.innerHTML=`Das war nicht ganz. Versuch es nochmal — schau dir die Optionen genau an.`;
+          if(s.attempts>=2)fb.innerHTML+=`<div class="why">💡 Tipp: ${t.hint}</div>`;
+          save();updateStats();
+        }
+      });
+    });
+  }else{
+    const inp=card.querySelector("input");
+    const btn=card.querySelector(".primary");
+    const check=()=>{
+      if(s.solved)return;
+      const raw=inp.value.trim();
+      if(raw===""){fb.className="fb err";fb.textContent="Bitte etwas eingeben.";return;}
+      s.attempts++;
+      let ok;
+      if(t.type==="text"){
+        ok=t.answers.some(a=>norm(a)===norm(raw));
+      }else{
+        const v=parseFloat(raw.replace(/,/g,".").replace(/[^\d.eE+\-]/g,""));
+        ok=!isNaN(v)&&Math.abs(v-t.answer)<=t.tol;
+      }
+      if(ok){inp.disabled=true;btn.disabled=true;grade(t,fb,true);}
+      else{
+        fb.className="fb err";
+        fb.innerHTML=`Noch nicht — versuch es erneut.${t.type==="text"?" <span class='unit'>(Tipp: nur der reine Begriff, ohne Artikel)</span>":""}`;
+        if(s.attempts>=2)fb.innerHTML+=`<div class="why">💡 ${t.hint}</div>`;
+        if(s.attempts>=3){fb.innerHTML+=`<div class="why">🔎 Lösung: ${t.explain}</div>`;}
+        save();updateStats();
+      }
+    };
+    btn.addEventListener("click",check);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+  }
+  hintBtn.addEventListener("click",()=>{
+    if(s.hint||s.solved)return;
+    s.hint=true;fb.className="fb hint";fb.innerHTML=`💡 ${t.hint}`;save();updateStats();
+  });
+}
+function grade(t,fb,ok){
+  const s=st(t.id);
+  if(s.solved)return;
+  s.solved=true;
+  let p=10-3*Math.max(0,s.attempts-1)-(s.hint?2:0);
+  s.pts=Math.max(1,p);
+  S.streak++;
+  save();
+  fb.className="fb ok";
+  fb.innerHTML=`✅ Richtig! +${s.pts} Punkte<div class="why">${t.explain}</div>`;
+  const card=document.getElementById("card"+t.id);card.classList.add("solved");
+  const inp=card.querySelector("input");if(inp)inp.disabled=true;
+  const btn=card.querySelector(".primary");if(btn)btn.disabled=true;
+  card.querySelectorAll(".opt").forEach(o=>{o.style.pointerEvents="none";if(+o.dataset.i===t.correct)o.classList.add("right");});
+  const hb=card.querySelector(".tools button");if(hb)hb.disabled=true;
+  render();
+  const nc=document.getElementById("card"+t.id);
+  if(nc)nc.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function updateStats(){
+  document.getElementById("pts").textContent=totalPts();
+  document.getElementById("streak").textContent=S.streak;
+  document.getElementById("pfill").style.width=(solvedCount()/TASKS.length*100)+"%";
+}
+let resetArm=0;
+document.getElementById("resetBtn").addEventListener("click",e=>{
+  const b=e.currentTarget;
+  if(b.dataset.armed){S={t:{},streak:0};MEM=null;if(LS)try{LS.removeItem(KEY)}catch(err){}render();return;}
+  b.dataset.armed="1";b.textContent="Sicher? Nochmal tippen";
+  setTimeout(()=>{b.textContent="↺ Reset";delete b.dataset.armed;},4000);
+});
+render();
+</script>
+</body>
+</html>
